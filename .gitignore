@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+
+# Old data paths (kept for safety)
+data/usda/
+data/uk/
+data/faostat/
+data/sweden/
+data/global_nutrition.db
+data/harmonized.csv
+
+# LibreOffice lock files
+.~lock.*
