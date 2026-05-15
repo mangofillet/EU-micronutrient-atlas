@@ -358,19 +358,21 @@ def make_rda_chart(food="Tuna and bonito (generic)", nutrient="Selenium",
 
 # ── Heatmap ────────────────────────────────────────────────────────────────────
 def _heatmap_scale(arr, scale, nutrients=None):
-    """Return (z_norm, cscale, zmid_val, cbar_title) for a 2-D raw-value array."""
+    """Return (z_norm, cscale, zmid_val, cbar_title, z_pct) for a 2-D raw-value array.
+    z_pct is the raw % of RDA array (for cell text) when scale='rda', else None."""
     if scale == "zscore":
         col_m = np.nanmean(arr, axis=0); col_s = np.nanstd(arr, axis=0)
         col_s[col_s == 0] = 1
-        return np.clip((arr - col_m) / col_s, -2.5, 2.5), "Plasma", 0, "z-score"
+        return np.clip((arr - col_m) / col_s, -2.5, 2.5), "Plasma", 0, "z-score", None
     if scale == "rda" and nutrients is not None:
         rda_arr = np.array([EU_RDA.get(n, 1) for n in nutrients], dtype=float)
         rda_arr[rda_arr == 0] = 1
-        z_norm = np.clip(arr / rda_arr * 100, 0, 300)
-        return z_norm, "YlOrRd", None, "% of RDA"
-    # values: per-column % of max for color
+        pct = np.clip(arr / rda_arr * 100, 0, None)  # raw %, uncapped
+        z_norm = np.log1p(pct)                         # log scale for colour so high values still differ
+        return z_norm, "YlOrRd", None, "% of RDA (EU adult NRV)", pct
+    # values: per-column % of max for colour
     col_max = np.nanmax(arr, axis=0); col_max[col_max == 0] = 1
-    return arr / col_max, "YlOrRd", None, "% of max"
+    return arr / col_max, "YlOrRd", None, "% of max", None
 
 def make_heatmap(view="food", category="Meat and meat products", nutrient_group="all", scale="zscore", h=None):
     nutrients = _nutrient_list(nutrient_group)
@@ -389,15 +391,18 @@ def make_heatmap(view="food", category="Meat and meat products", nutrient_group=
                 row_h.append(f"{m:.2f} {EU_UNITS[n]}/100g" if pd.notna(m) else "No data")
             z_mat.append(row_z); h_mat.append(row_h)
         z_arr = np.array(z_mat, dtype=float)
-        z_norm, cscale, zmid_val, cbar_title = _heatmap_scale(z_arr, scale, nutrients)
-        # Cell text for values mode
-        cell_text = [[_fmt_cell(z_arr[i,j], EU_UNITS[nutrients[j]])
-                      for j in range(len(nutrients))]
-                     for i in range(len(EU_COUNTRIES))] if show_vals else None
+        z_norm, cscale, zmid_val, cbar_title, z_pct = _heatmap_scale(z_arr, scale, nutrients)
+        # Cell text: actual mg/µg for values mode, XX% for rda mode
+        if show_vals:
+            cell_text = [[_fmt_cell(z_arr[i,j], EU_UNITS[nutrients[j]]) for j in range(len(nutrients))] for i in range(len(EU_COUNTRIES))]
+        elif scale == "rda" and z_pct is not None:
+            cell_text = [[f"{z_pct[i,j]:.0f}%" if np.isfinite(z_pct[i,j]) else "" for j in range(len(nutrients))] for i in range(len(EU_COUNTRIES))]
+        else:
+            cell_text = None
         y_labs = [f"{EU_FLAGS[c]} {c}" for c in EU_COUNTRIES]
         hm_kw = dict(zmid=zmid_val) if zmid_val is not None else {}
         txt_kw = dict(text=cell_text, texttemplate="%{text}",
-                      textfont=dict(size=9, color="rgba(255,255,255,0.9)")) if show_vals else {}
+                      textfont=dict(size=9, color="rgba(255,255,255,0.9)")) if cell_text is not None else {}
         fig = go.Figure(go.Heatmap(
             z=z_norm, x=x_labs, y=y_labs, colorscale=cscale, **hm_kw, **txt_kw,
             customdata=np.array(h_mat),
@@ -431,15 +436,18 @@ def make_heatmap(view="food", category="Meat and meat products", nutrient_group=
         cdata_3d = np.array([[[full_names[i], hover[i][j]]
                                for j in range(len(nutrients))]
                               for i in range(len(sub))])
-        z_norm, cscale, zmid_val, cbar_title = _heatmap_scale(vals, scale, nutrients)
-        # Cell text for values mode (raw vals, not z_norm)
-        cell_text = [[_fmt_cell(vals[i,j], EU_UNITS[nutrients[j]])
-                      for j in range(len(nutrients))]
-                     for i in range(len(sub))] if show_vals else None
+        z_norm, cscale, zmid_val, cbar_title, z_pct = _heatmap_scale(vals, scale, nutrients)
+        # Cell text: actual mg/µg for values mode, XX% for rda mode
+        if show_vals:
+            cell_text = [[_fmt_cell(vals[i,j], EU_UNITS[nutrients[j]]) for j in range(len(nutrients))] for i in range(len(sub))]
+        elif scale == "rda" and z_pct is not None:
+            cell_text = [[f"{z_pct[i,j]:.0f}%" if np.isfinite(z_pct[i,j]) else "" for j in range(len(nutrients))] for i in range(len(sub))]
+        else:
+            cell_text = None
         y_labs = [_shorten(n,34) for n in sub["food_name"]]
         hm_kw = dict(zmid=zmid_val) if zmid_val is not None else {}
         txt_kw = dict(text=cell_text, texttemplate="%{text}",
-                      textfont=dict(size=7, color="rgba(255,255,255,0.85)")) if show_vals else {}
+                      textfont=dict(size=7, color="rgba(255,255,255,0.85)")) if cell_text is not None else {}
         scale_lbl = {"zscore":"z-score","rda":"% of RDA","values":"actual values"}.get(scale, scale)
         fig = go.Figure(go.Heatmap(
             z=z_norm, x=x_labs, y=y_labs, colorscale=cscale, **hm_kw, **txt_kw,
@@ -494,22 +502,27 @@ def make_single_food_heatmap(food_name, countries, nutrient_group="all", scale="
     elif scale == "rda":
         rda_arr = np.array([EU_RDA.get(n, 1) for n in nutrients], dtype=float)
         rda_arr[rda_arr == 0] = 1
-        z_norm = np.clip(z_arr / rda_arr * 100, 0, 300)
-        cscale, zmid_val, cbar_title = "YlOrRd", None, "% of RDA"
-        title_suffix = "% of daily RDA per 100g"
+        z_pct = np.clip(z_arr / rda_arr * 100, 0, None)
+        z_norm = np.log1p(z_pct)
+        cscale, zmid_val, cbar_title = "YlOrRd", None, "% of RDA (EU adult NRV)"
+        title_suffix = "% of daily RDA per 100g (EU adult NRV)"
     else:  # values
+        z_pct = None
         col_max = np.nanmax(z_arr, axis=0); col_max[col_max == 0] = 1
         z_norm = z_arr / col_max
         cscale, zmid_val, cbar_title = "YlOrRd", None, "% of max"
         title_suffix = "actual values (% of max)"
 
-    cell_text = [[_fmt_cell(z_arr[i,j], EU_UNITS[nutrients[j]])
-                  for j in range(len(nutrients))]
-                 for i in range(len(countries))] if show_vals else None
+    if show_vals:
+        cell_text = [[_fmt_cell(z_arr[i,j], EU_UNITS[nutrients[j]]) for j in range(len(nutrients))] for i in range(len(countries))]
+    elif scale == "rda" and z_pct is not None:
+        cell_text = [[f"{z_pct[i,j]:.0f}%" if np.isfinite(z_pct[i,j]) else "" for j in range(len(nutrients))] for i in range(len(countries))]
+    else:
+        cell_text = None
     y_labs = [f"{EU_FLAGS[c]} {c}" for c in countries]
     hm_kw  = dict(zmid=zmid_val) if zmid_val is not None else {}
     txt_kw = dict(text=cell_text, texttemplate="%{text}",
-                  textfont=dict(size=10, color="rgba(255,255,255,0.9)")) if show_vals else {}
+                  textfont=dict(size=10, color="rgba(255,255,255,0.9)")) if cell_text is not None else {}
     n_rows = len(countries)
     fig = go.Figure(go.Heatmap(
         z=z_norm, x=x_labs, y=y_labs, colorscale=cscale, **hm_kw, **txt_kw,
