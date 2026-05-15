@@ -28,7 +28,7 @@
 
 | Source | Description |
 |---|---|
-| **EFSA Total Diet Study** | Per-food micronutrient concentrations averaged across 7 EU countries (DE, FR, IT, ES, NL, BE, UK) |
+| **EFSA Total Diet Study** | Per-food micronutrient concentrations averaged across 7 EU countries (DE, FR, IT, ES, NL, BE, UK) | https://www.efsa.europa.eu/en/microstrategy/food-composition-data
 | **EU RDA** | EFSA Dietary Reference Values used for % of RDA calculations |
 
 **File:** `data/EU/eu_nutrients_unified.csv`
