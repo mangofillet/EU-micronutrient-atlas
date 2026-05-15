@@ -1,7 +1,5 @@
 
-  ╔══════════════════════════════════════════════╗
-  ║          EU  MICRONUTRIENT  ATLAS            ║
-  ╚══════════════════════════════════════════════╝
+     EU  MICRONUTRIENT  ATLAS       
 
 
 > *You can't compare apples and oranges — but can you even compare apples and apples?*
