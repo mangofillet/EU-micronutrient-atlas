@@ -145,4 +145,3 @@ Requires Python 3.10+. Tested with Dash 4.1.0.
 - All values are per 100g of food as consumed.
 - EU average is the mean across available country measurements.
 - Zero values in the source data are treated as missing (NaN) throughout.
-- The `_old_project/` folder contains archived data and scripts from an earlier version of this project that planned to include USDA, UK CoFID, Swedish, Norwegian, and FAOSTAT global data. Those datasets are not used by the current app.
