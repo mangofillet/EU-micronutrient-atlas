@@ -145,3 +145,7 @@ Requires Python 3.10+. Tested with Dash 4.1.0.
 - All values are per 100g of food as consumed.
 - EU average is the mean across available country measurements.
 - Zero values in the source data are treated as missing (NaN) throughout.
+
+---
+
+*Assisted by [Claude Code](https://claude.ai/code)*
