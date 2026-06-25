@@ -1068,6 +1068,7 @@ _FIGS = {
 
 # ── App ────────────────────────────────────────────────────────────────────────
 app = Dash(__name__, suppress_callback_exceptions=True)
+server = app.server
 app.title = "EU Micronutrient Atlas"
 
 @app.server.route("/videos/<path:filename>")
