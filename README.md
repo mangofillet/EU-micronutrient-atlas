@@ -1,4 +1,4 @@
-<img width="1752" height="716" alt="image" src="https://github.com/user-attachments/assets/b8f74aff-9f90-44df-b8fe-6da42df603e2" />
+![EU Micronutrient Atlas — dashboard walkthrough](docs/demo.gif)
 
 
 
