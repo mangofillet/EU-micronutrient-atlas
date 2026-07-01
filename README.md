@@ -16,6 +16,8 @@
 > **The EU Micronutrient Atlas** is an attempt to find out. It maps EFSA Total Diet study data into an interactive, cinematic dashboard so you can explore, compare,
 > and question the food on your plate — one nutrient at a time.
 
+> **What it demonstrates:** data cleaning & ETL · pandas · interactive dashboard design (Plotly/Dash) · reconciling multi-source data · data storytelling · Python.
+
 ---
 
 ## What You Can Explore
